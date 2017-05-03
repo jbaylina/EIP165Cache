@@ -27,6 +27,9 @@ contract EIP165CacheInterface is GenericInterface {
 
 contract EIP165Cache is EIP165CacheInterface {
 
+
+    bytes32 constant public InvalidInterfaceId = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+
     enum ImplStatus { Unknown, NoEIP156, No, Yes }
     struct ContractCache {
         mapping (bytes32 => ImplStatus) interfaces;
@@ -75,7 +78,7 @@ contract EIP165Cache is EIP165CacheInterface {
             return ImplStatus.NoEIP156;
         }
 
-        (success, result) = noThrowCall(_contract, 0xFFFFFFFF);
+        (success, result) = noThrowCall(_contract, InvalidInterfaceId);
         if ((!success)||(result)) {
             return ImplStatus.NoEIP156;
         }
