@@ -1,52 +1,36 @@
-pragma solidity ^0.4.10;
+pragma solidity ^0.4.11;
 
-contract GenericInterface {
-    bytes32 constant public GenericInterfaceId = 0xf1753550;
+contract IEIP165 {
+    bytes4 constant IEIP165ID =
+        bytes4(sha3('supportsInterface(bytes4)'));
 
-    mapping (bytes32 => bool) public supportsInterface;
-
-    function GenericInterface() {
-        supportsInterface[GenericInterfaceId] = true;
+    mapping(bytes4 => bool) public supportsInterface;
+    function IEIP165() {
+        supportsInterface[IEIP165ID] = true;
     }
 }
 
-contract EIP165CacheInterface is GenericInterface {
-    bytes32 constant public EIP165CacheInterfaceId =
-        0x691df1e5 ^
-        0x4c25a53a ^
-        0xaca16d16;
+contract EIP165Cache is IEIP165 {
 
-    function doesSupportInterface(address _contract, bytes32 _interfaceId) constant returns (bool);
-    function doesSupportEIP165(address _contract) constant returns (bool);
-    function doesSupportInterfaces(address _contract, bytes32[] _interfaceIDs) constant returns (bytes32);
+    bytes4 constant public IInvalidID = 0xFFFFFFFF;
 
-    function EIP165CacheInterface() {
-        supportsInterface[EIP165CacheInterfaceId] = true;
-    }
-}
-
-contract EIP165Cache is EIP165CacheInterface {
-
-
-    bytes32 constant public InvalidInterfaceId = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-
-    enum ImplStatus { Unknown, NoEIP156, No, Yes }
+    enum ImplStatus { Unknown, NoEIP165, No, Yes }
     struct ContractCache {
-        mapping (bytes32 => ImplStatus) interfaces;
+        mapping (bytes4 => ImplStatus) interfaces;
     }
     mapping (address => ContractCache) cache;
 
-    function doesSupportInterface(address _contract, bytes32 _interfaceId) constant returns (bool) {
+    function doesSupportInterface(address _contract, bytes4 _interfaceId) constant returns (bool) {
         ImplStatus status = getInterfaceImplementationStatus(_contract, _interfaceId);
         return status == ImplStatus.Yes;
     }
 
     function doesSupportEIP165(address _contract) constant returns (bool) {
-        ImplStatus status = getInterfaceImplementationStatus(_contract, GenericInterfaceId);
+        ImplStatus status = getInterfaceImplementationStatus(_contract, IEIP165ID);
         return status == ImplStatus.Yes;
     }
 
-    function doesSupportInterfaces(address _contract, bytes32[] _interfaceIDs) constant returns (bytes32 r) {
+    function doesSupportInterfaces(address _contract, bytes4[] _interfaceIDs) constant returns (bytes32 r) {
         ImplStatus status;
         if (_interfaceIDs.length > 256) throw;
         for (uint i = 0; i < _interfaceIDs.length; i++) {
@@ -59,8 +43,8 @@ contract EIP165Cache is EIP165CacheInterface {
         return r;
     }
 
-    function getInterfaceImplementationStatus(address _contract, bytes32 _interfaceId) returns (ImplStatus) {
-        if (!isContract(_contract)) return ImplStatus.NoEIP156;
+    function getInterfaceImplementationStatus(address _contract, bytes4 _interfaceId) internal returns (ImplStatus) {
+        if (!isContract(_contract)) return ImplStatus.NoEIP165;
         ImplStatus status = cache[_contract].interfaces[_interfaceId];
         if (status == ImplStatus.Unknown) {
             status = determineInterfaceImplementationStatus(_contract, _interfaceId);
@@ -69,23 +53,23 @@ contract EIP165Cache is EIP165CacheInterface {
         return status;
     }
 
-    function determineInterfaceImplementationStatus(address _contract, bytes32 _interfaceId) constant returns (ImplStatus) {
+    function determineInterfaceImplementationStatus(address _contract, bytes4 _interfaceId) constant internal returns (ImplStatus) {
         bool success;
         bool result;
 
-        (success, result) = noThrowCall(_contract, GenericInterfaceId);
+        (success, result) = noThrowCall(_contract, IEIP165ID);
         if ((!success)||(!result)) {
-            return ImplStatus.NoEIP156;
+            return ImplStatus.NoEIP165;
         }
 
-        (success, result) = noThrowCall(_contract, InvalidInterfaceId);
+        (success, result) = noThrowCall(_contract, IInvalidID);
         if ((!success)||(result)) {
-            return ImplStatus.NoEIP156;
+            return ImplStatus.NoEIP165;
         }
 
         (success, result) = noThrowCall(_contract, _interfaceId);
         if (!success) {
-            return ImplStatus.NoEIP156;
+            return ImplStatus.NoEIP165;
         } else if (result) {
             return ImplStatus.Yes;
         } else {
@@ -93,8 +77,8 @@ contract EIP165Cache is EIP165CacheInterface {
         }
     }
 
-    function noThrowCall(address _contract, bytes32 _interfaceId) constant internal returns (bool success, bool result) {
-        bytes4 sig = bytes4(sha3("supportsInterface(bytes32)")); //Function signature
+    function noThrowCall(address _contract, bytes4 _interfaceId) constant internal returns (bool success, bool result) {
+        bytes4 sig = bytes4(sha3("supportsInterface(bytes4)")); //Function signature
 
         assembly {
                 let x := mload(0x40)   //Find empty storage location using "free memory pointer"
@@ -106,11 +90,11 @@ contract EIP165Cache is EIP165CacheInterface {
                                     _contract, //To addr
                                     0,    //No value
                                     x,    //Inputs are stored at location x
-                                    0x24, //Inputs are 36 byes long
+                                    0x8, //Inputs are 8 byes long
                                     x,    //Store output over input (saves space)
                                     0x20) //Outputs are 32 bytes long
 
-                result := mload(add(x, 0x20))   // Load the length of the sring
+                result := mload(x)   // Load the result
         }
     }
 
@@ -119,6 +103,14 @@ contract EIP165Cache is EIP165CacheInterface {
         assembly {
             size := extcodesize(_addr)
         }
-        return size>0;
+        return size>1;
+    }
+
+    function contractSize(address _addr) constant internal returns(uint) {
+        uint size;
+        assembly {
+            size := extcodesize(_addr)
+        }
+        return size;
     }
 }
