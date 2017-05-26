@@ -86,7 +86,7 @@ contract EIP165Cache is IEIP165 {
                 mstore(add(x,0x04),_interfaceId) //Place first argument directly next to signature
 
                 success := call(      //This is the critical change (Pop the top stack value)
-                                    20000, //5k gas
+                                    30000, //5k gas
                                     _contract, //To addr
                                     0,    //No value
                                     x,    //Inputs are stored at location x
