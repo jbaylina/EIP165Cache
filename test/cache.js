@@ -9,7 +9,7 @@ contract('EIP165Cache', function(accounts) {
 
     eip165Cache = EIP165Cache.at(EIP165Cache.address);
 
-    const implements165 = await eip165Cache.doesSupportEIP165(accounts[0]);
+    const implements165 = await eip165Cache.eip165Supported(accounts[0]);
 
     assert.equal(false, implements165);
   });
@@ -20,19 +20,19 @@ contract('EIP165Cache', function(accounts) {
     const ii1 = await c.supportsInterface('0x11111111');
     assert.equal(true, ii1);
 
-    const implements165 = await eip165Cache.doesSupportEIP165(c.address);
+    const implements165 = await eip165Cache.eip165Supported(c.address);
     assert.equal(true, implements165);
 
-    const implements1111 = await eip165Cache.doesSupportInterface(c.address, "0x11111111");
+    const implements1111 = await eip165Cache.interfaceSupported(c.address, "0x11111111");
     assert.equal(true, implements1111);
 
-    const implements2222 = await eip165Cache.doesSupportInterface(c.address, "0x22222222");
+    const implements2222 = await eip165Cache.interfaceSupported(c.address, "0x22222222");
     assert.equal(true, implements2222);
 
-    const implements3333 = await eip165Cache.doesSupportInterface(c.address, "0x33333333");
+    const implements3333 = await eip165Cache.interfaceSupported(c.address, "0x33333333");
     assert.equal(false, implements3333);
 
-    const implementsMulti = await eip165Cache.doesSupportInterfaces(c.address, [
+    const implementsMulti = await eip165Cache.interfacesSupported(c.address, [
         "0x11111111",
         "0x22222222",
         "0x33333333",
@@ -49,21 +49,21 @@ contract('EIP165Cache', function(accounts) {
   it("Multisig shuld not implement EIP 165", async () => {
     const c = await MultisigMock.new();
 
-    const implements165 = await eip165Cache.doesSupportEIP165(c.address);
+    const implements165 = await eip165Cache.eip165Supported(c.address);
 
     assert.equal(false, implements165);
   });
   it("Regular contract shuld not implement EIP 165", async () => {
     const c = await RegularContract.new();
 
-    const implements165 = await eip165Cache.doesSupportEIP165(c.address);
+    const implements165 = await eip165Cache.eip165Supported(c.address);
 
     assert.equal(false, implements165);
   });
   it("Should save in the cache and still work", async () => {
     const c = await EIP165Implementer.new();
 
-    const gasBefore = await eip165Cache.doesSupportInterfaces.estimateGas(c.address, [
+    const gasBefore = await eip165Cache.interfacesSupported.estimateGas(c.address, [
         "0x11111111",
         "0x22222222",
         "0x33333333",
@@ -71,7 +71,7 @@ contract('EIP165Cache', function(accounts) {
         "0xffffffff"
       ]);
 
-    await eip165Cache.doesSupportInterfaces.sendTransaction(c.address, [
+    await eip165Cache.interfacesSupported.sendTransaction(c.address, [
         "0x11111111",
         "0x22222222",
         "0x33333333",
@@ -81,7 +81,7 @@ contract('EIP165Cache', function(accounts) {
 
     const ii1 = await c.supportsInterface('0x11111111');
 
-    const gasAfter = await eip165Cache.doesSupportInterfaces.estimateGas(c.address, [
+    const gasAfter = await eip165Cache.interfacesSupported.estimateGas(c.address, [
         "0x11111111",
         "0x22222222",
         "0x33333333",
@@ -91,7 +91,7 @@ contract('EIP165Cache', function(accounts) {
 
     assert.isAbove(gasBefore, gasAfter);
 
-    const implementsMulti = await eip165Cache.doesSupportInterfaces(c.address, [
+    const implementsMulti = await eip165Cache.interfacesSupported(c.address, [
         "0x11111111",
         "0x22222222",
         "0x33333333",

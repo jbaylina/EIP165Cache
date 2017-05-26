@@ -20,17 +20,17 @@ contract EIP165Cache is IEIP165 {
     }
     mapping (address => ContractCache) cache;
 
-    function doesSupportInterface(address _contract, bytes4 _interfaceId) constant returns (bool) {
+    function interfaceSupported(address _contract, bytes4 _interfaceId) constant returns (bool) {
         ImplStatus status = getInterfaceImplementationStatus(_contract, _interfaceId);
         return status == ImplStatus.Yes;
     }
 
-    function doesSupportEIP165(address _contract) constant returns (bool) {
+    function eip165Supported(address _contract) constant returns (bool) {
         ImplStatus status = getInterfaceImplementationStatus(_contract, IEIP165ID);
         return status == ImplStatus.Yes;
     }
 
-    function doesSupportInterfaces(address _contract, bytes4[] _interfaceIDs) constant returns (bytes32 r) {
+    function interfacesSupported(address _contract, bytes4[] _interfaceIDs) constant returns (bytes32 r) {
         ImplStatus status;
         if (_interfaceIDs.length > 256) throw;
         for (uint i = 0; i < _interfaceIDs.length; i++) {
