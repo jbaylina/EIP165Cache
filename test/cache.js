@@ -100,7 +100,37 @@ contract('EIP165Cache', function(accounts) {
       ]);
 
     assert.equal("0x000000000000000000000000000000000000000000000000000000000000000b",implementsMulti);
+  });
 
+  it("Should be usable in old version of contracts", async () => {
+    const abi = [{"inputs":[],"type":"constructor","payable":true},{"type":"fallback","payable":true}];
+    const code = "0x60606040525b5b60338060126000396000f360606040523615600d57600d565b601d5b600060019050601a565b90565b6040518082815260200191505060405180910390f3";
 
-  })
+    const contract = web3.eth.contract(abi);
+    const tx = await contract.new({data: code, from: accounts[0], gas: 1000000});
+
+    const r = await web3.eth.getTransactionReceipt(tx.transactionHash);
+
+    const c = web3.eth.contract(abi).at(r.contractAddress);
+
+    const implements165 = await eip165Cache.eip165Supported(c.address);
+
+    assert.equal(false, implements165);
+  });
+
+  it("Should be usable in return false version of contracts", async () => {
+    const abi = [{"inputs":[],"type":"constructor","payable":true},{"type":"fallback","payable":true}];
+    const code = "0x60606040525b5b60338060126000396000f360606040523615600d57600d565b601d5b600060009050601a565b90565b6040518082815260200191505060405180910390f3";
+
+    const contract = web3.eth.contract(abi);
+    const tx = await contract.new({data: code, from: accounts[0], gas: 1000000});
+
+    const r = await web3.eth.getTransactionReceipt(tx.transactionHash);
+
+    const c = web3.eth.contract(abi).at(r.contractAddress);
+
+    const implements165 = await eip165Cache.eip165Supported(c.address);
+
+    assert.equal(false, implements165);
+  });
 });
